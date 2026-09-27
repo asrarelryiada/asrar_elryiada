@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'main_news_slider.dart';
-import 'app_header.dart'; // الهيدر الأساسي للموقع باللوجو والأقسام
-import 'breaking_news_ticker.dart'; // ملف شريط الأخبار العاجلة المستقل
+import 'app_header.dart';
+import 'breaking_news_ticker.dart';
 import 'dart:convert';
 
 class NewsSectionCenter extends StatefulWidget {
@@ -13,7 +13,6 @@ class NewsSectionCenter extends StatefulWidget {
 }
 
 class _NewsSectionCenterState extends State<NewsSectionCenter> {
-  // دالة موحدة لفتح تفاصيل الخبر تعرض الهيدر الأساسي واللوجو والتفاصيل مرتبة يميناً
   void _openNewsDetails(BuildContext context, Map<String, dynamic> newsData) {
     Navigator.push(
       context,
@@ -28,7 +27,6 @@ class _NewsSectionCenterState extends State<NewsSectionCenter> {
                 children: [
                   const AppHeader(),
                   const SizedBox(height: 24),
-
                   Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 850),
@@ -49,7 +47,6 @@ class _NewsSectionCenterState extends State<NewsSectionCenter> {
                               ),
                             ),
                             const SizedBox(height: 10),
-
                             Container(
                               padding: const EdgeInsets.all(28),
                               decoration: BoxDecoration(
@@ -79,7 +76,6 @@ class _NewsSectionCenterState extends State<NewsSectionCenter> {
                                     ),
                                   ),
                                   const SizedBox(height: 14),
-
                                   Text(
                                     newsData['title'] ?? 'بدون عنوان',
                                     style: const TextStyle(
@@ -90,7 +86,6 @@ class _NewsSectionCenterState extends State<NewsSectionCenter> {
                                     ),
                                   ),
                                   const SizedBox(height: 18),
-
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
@@ -111,7 +106,6 @@ class _NewsSectionCenterState extends State<NewsSectionCenter> {
                                     ],
                                   ),
                                   const Divider(height: 32),
-
                                   if (newsData['imageUrl'] != null || newsData['image'] != null)
                                     ClipRRect(
                                       borderRadius: BorderRadius.circular(8),
@@ -124,7 +118,6 @@ class _NewsSectionCenterState extends State<NewsSectionCenter> {
                                       ),
                                     ),
                                   const SizedBox(height: 28),
-
                                   Text(
                                     newsData['content'] ?? newsData['description'] ?? 'لا يوجد محتوى تفصيلي مضاف لهذا الخبر حتى الآن.',
                                     style: const TextStyle(
@@ -153,6 +146,8 @@ class _NewsSectionCenterState extends State<NewsSectionCenter> {
 
   @override
   Widget build(BuildContext context) {
+    bool isMobile = MediaQuery.of(context).size.width < 900;
+
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection('news').orderBy('createdAt', descending: true).snapshots(),
       builder: (context, snapshot) {
@@ -168,11 +163,68 @@ class _NewsSectionCenterState extends State<NewsSectionCenter> {
         }
 
         final newsDocs = snapshot.data!.docs;
-        
         final sliderNewsList = newsDocs.take(10).map((doc) => doc.data() as Map<String, dynamic>).toList();
         final subNews = newsDocs.skip(1).take(4).toList();
-        
         final titlesList = newsDocs.map((doc) => (doc.data() as Map<String, dynamic>)['title'] ?? '').toList().cast<String>();
+
+        // تصميم بطاقة الخبر الفرعي المنفصلة لتجنب التكرار
+        Widget buildSubNewsItem(Map<String, dynamic> newsData) {
+          return InkWell(
+            onTap: () => _openNewsDetails(context, newsData),
+            child: Container(
+              height: isMobile ? 85 : null,
+              margin: const EdgeInsets.only(bottom: 6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topRight: Radius.circular(4),
+                      bottomRight: Radius.circular(4),
+                    ),
+                    child: SizedBox(
+                      width: isMobile ? 110 : 100,
+                      height: double.infinity,
+                      child: _buildNewsImage(newsData['imageUrl'] ?? newsData['image']),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 6.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            newsData['category'] ?? 'أخبار',
+                            style: const TextStyle(fontSize: 10, color: Color(0xFFB71C1C), fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            newsData['title'] ?? 'بدون عنوان',
+                            style: TextStyle(
+                              fontSize: isMobile ? 12 : 11.5,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                              height: 1.2,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
 
         return Directionality(
           textDirection: TextDirection.rtl,
@@ -181,99 +233,63 @@ class _NewsSectionCenterState extends State<NewsSectionCenter> {
             mainAxisSize: MainAxisSize.min,
             children: [
               BreakingNewsTicker(titles: titlesList),
+              const SizedBox(height: 10),
 
-              Container(
-                height: 364,
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 5,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: subNews.map((doc) {
-                          final newsData = doc.data() as Map<String, dynamic>;
-                          return Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.only(bottom: 4.0),
-                              child: InkWell(
-                                onTap: () => _openNewsDetails(context, newsData),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(color: Colors.grey.shade200),
+              // التحقق من عرض الشاشة: إذا كان موبايل نعرضهم تحت بعض (Column)، وإذا كمبيوتر نعرضهم جنباً إلى جنب (Row)
+              isMobile
+                  ? Column(
+                      children: [
+                        SizedBox(
+                          height: 240,
+                          child: MainNewsSlider(
+                            sliderNewsList: sliderNewsList,
+                            onNewsTap: _openNewsDetails,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        ...subNews.map((doc) => buildSubNewsItem(doc.data() as Map<String, dynamic>)),
+                      ],
+                    )
+                  : Container(
+                      height: 364,
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 5,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: subNews.map((doc) {
+                                final newsData = doc.data() as Map<String, dynamic>;
+                                return Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(bottom: 4.0),
+                                    child: buildSubNewsItem(newsData),
                                   ),
-                                  child: Row(
-                                    children: [
-                                      ClipRRect(
-                                        borderRadius: const BorderRadius.only(
-                                          topRight: Radius.circular(4),
-                                          bottomRight: Radius.circular(4),
-                                        ),
-                                        child: SizedBox(
-                                          width: 100,
-                                          height: double.infinity,
-                                          child: _buildNewsImage(newsData['imageUrl'] ?? newsData['image']),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              Text(
-                                                newsData['category'] ?? 'أخبار',
-                                                style: const TextStyle(fontSize: 10, color: Color(0xFFB71C1C), fontWeight: FontWeight.bold),
-                                              ),
-                                              const SizedBox(height: 2),
-                                              Text(
-                                                newsData['title'] ?? 'بدون عنوان',
-                                                style: const TextStyle(
-                                                  fontSize: 11.5,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.black87,
-                                                  height: 1.2,
-                                                ),
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 6,
+                            child: SizedBox(
+                              height: 364,
+                              child: MainNewsSlider(
+                                sliderNewsList: sliderNewsList,
+                                onNewsTap: _openNewsDetails,
                               ),
                             ),
-                          );
-                        }).toList(),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 12),
-
-                    Expanded(
-                      flex: 6,
-                      child: SizedBox(
-                        height: 364,
-                        child: MainNewsSlider(
-                          sliderNewsList: sliderNewsList,
-                          onNewsTap: _openNewsDetails,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
         );

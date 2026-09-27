@@ -19,7 +19,7 @@ class _DashboardMatchesTabState extends State<DashboardMatchesTab> {
   final List<String> _sportTypes = ['كرة قدم', 'كرة يد', 'كرة سلة', 'كرة طائرة', 'ألعاب أخرى'];
 
   String _selectedMatchStatus = 'جارية الآن';
-  final List<String> _matchStatuses = ['اليوم', 'بعد قليل', 'جارية الآن', 'انتهت', 'مباريات قادمة'];
+  final List<String> _matchStatuses = ['اليوم', 'بعد قليل', 'جارية الآن', 'استراحة', 'انتهت', 'مباريات قادمة'];
   DateTime _selectedMatchDateTime = DateTime.now();
 
   String? _editingMatchId;
@@ -127,7 +127,7 @@ class _DashboardMatchesTabState extends State<DashboardMatchesTab> {
                       return DropdownMenuItem(value: status, child: Text(status));
                     }).toList(),
                     onChanged: (val) => setState(() => _selectedMatchStatus = val!),
-                    decoration: const InputDecoration(labelText: 'موقف وحالة المباراة (جارية، انتهت، بعد قليل...)', border: OutlineInputBorder()),
+                    decoration: const InputDecoration(labelText: 'موقف وحالة المباراة (جارية، استراحة، انتهت...)', border: OutlineInputBorder()),
                   ),
                   const SizedBox(height: 14),
                   OutlinedButton.icon(
@@ -218,6 +218,7 @@ class _DashboardMatchesTabState extends State<DashboardMatchesTab> {
                             'status': _selectedMatchStatus,
                             'startTime': Timestamp.fromDate(_selectedMatchDateTime),
                             'createdAt': FieldValue.serverTimestamp(),
+                            'date': "${_selectedMatchDateTime.year}-${_selectedMatchDateTime.month.toString().padLeft(2, '0')}-${_selectedMatchDateTime.day.toString().padLeft(2, '0')}",
                           };
 
                           if (_editingMatchId == null) {

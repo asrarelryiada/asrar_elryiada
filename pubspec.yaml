@@ -18,6 +18,8 @@ dependencies:
   image_picker: ^1.1.2
   firebase_storage: ^12.2.0
   marquee: ^2.2.3
+  url_launcher: ^6.2.5
+  youtube_player_iframe: ^5.1.2
 
 dev_dependencies:
   flutter_test:
@@ -29,5 +31,3 @@ flutter:
 
   assets:
     - assets/images/
-    - assets/images/teams/
-    - assets/images/logo/

@@ -5,6 +5,7 @@ import 'login_screen.dart';
 import 'add_news_page.dart';
 import 'widgets/dashboard_widgets/dashboard_matches_tab.dart';
 import 'widgets/dashboard_widgets/dashboard_social_tab.dart';
+import 'widgets/dashboard_videos_tab.dart'; // <--- المسار الصحيح للملف في مجلد widgets
 
 class DashboardScreen extends StatefulWidget {
   final bool isAdminMaster;
@@ -41,10 +42,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           'category': newNewsItem['category'],
           'imageUrl': newNewsItem['imageUrl'],
           'image': newNewsItem['image'],
+          'inlineImageUrl': newNewsItem['inlineImageUrl'],
           'authorImage': newNewsItem['authorImage'],
           'videoUrl': newNewsItem['videoUrl'],
           'videoLink': newNewsItem['videoLink'],
           'feedbackLink': newNewsItem['feedbackLink'],
+          'feedbackTitle': newNewsItem['feedbackTitle'],
           'dateTime': newNewsItem['dateTime'],
           'author': newNewsItem['author'],
           'fontFamily': newNewsItem['fontFamily'],
@@ -81,7 +84,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     List<Widget> pages = [];
     List<NavigationRailDestination> destinations = [];
 
-    // 1. الرئيسية والترحيب (تظهر للجميع)
+    // 1. الرئيسية والترحيب
     pages.add(
       SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -226,10 +229,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                             'category': updatedNews['category'],
                                             'imageUrl': updatedNews['imageUrl'],
                                             'image': updatedNews['image'],
+                                            'inlineImageUrl': updatedNews['inlineImageUrl'],
                                             'authorImage': updatedNews['authorImage'],
                                             'videoUrl': updatedNews['videoUrl'],
                                             'videoLink': updatedNews['videoLink'],
                                             'feedbackLink': updatedNews['feedbackLink'],
+                                            'feedbackTitle': updatedNews['feedbackTitle'],
                                             'dateTime': updatedNews['dateTime'],
                                             'author': updatedNews['author'],
                                             'fontFamily': updatedNews['fontFamily'],
@@ -279,13 +284,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
     }
 
-    // 4. قسم السوشيال ميديا الجديد (متاح للإدارة والتحكم)
+    // 4. قسم الفيديوهات والصور الجديد
+    pages.add(const DashboardVideosTab());
+    destinations.add(
+      const NavigationRailDestination(icon: Icon(Icons.video_library), label: Text('فيديوهات وصور')),
+    );
+
+    // 5. قسم السوشيال ميديا
     pages.add(const DashboardSocialTab());
     destinations.add(
       const NavigationRailDestination(icon: Icon(Icons.forum), label: Text('السوشيال ميديا')),
     );
 
-    // 5. إدارة المشرفين (للأدمن الرئيسي Master فقط)
+    // 6. إدارة المشرفين (للأدمن الرئيسي Master فقط)
     if (widget.isAdminMaster) {
       pages.add(
         Padding(
@@ -357,7 +368,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
     }
 
-    // الحفاظ على الأمان لعدم الخروج عن نطاق القائمة المختارة
     if (_selectedIndex >= pages.length) {
       _selectedIndex = 0;
     }

@@ -113,8 +113,6 @@ class MatchesAndSectionsBody extends StatelessWidget {
                                       color: Colors.black87,
                                     ),
                                   ),
-                                  
-                                  // إذا وُجد رابط خبر متعلق (Feedback Link)، يظهر بشكل جذاب في نهاية المقال
                                   if (newsData['feedbackLink'] != null && newsData['feedbackLink'].toString().isNotEmpty) ...[
                                     const SizedBox(height: 24),
                                     Container(
@@ -268,6 +266,9 @@ class MatchesAndSectionsBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    bool isMobile = MediaQuery.of(context).size.width < 900;
+    double screenWidth = MediaQuery.of(context).size.width;
+
     final List<String> mainCategories = [
       'المحترفون',
       'عالمي',
@@ -354,13 +355,14 @@ class MatchesAndSectionsBody extends StatelessWidget {
                         const Divider(height: 14),
                         const SizedBox(height: 8),
                         
+                        // استخدام عرض متجاوب للبطاقات (عرض كامل على الموبايل و320 للكمبيوتر)
                         Wrap(
                           spacing: 14,
                           runSpacing: 14,
                           children: displayNews.map((doc) {
                             final news = doc.data() as Map<String, dynamic>;
                             return SizedBox(
-                              width: 320,
+                              width: isMobile ? screenWidth - 32 : 320,
                               height: 180,
                               child: InkWell(
                                 onTap: () => _openNewsDetails(context, news),

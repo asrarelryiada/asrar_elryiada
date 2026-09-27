@@ -61,16 +61,20 @@ class _MainNewsSliderState extends State<MainNewsSlider> {
 
   @override
   Widget build(BuildContext context) {
+    // التحقق من مقاس الشاشة لجعل ارتفاع الأسلايدر متجاوباً (أصغر على الموبايل وأنسب للعين)
+    bool isMobile = MediaQuery.of(context).size.width < 900;
+    double sliderHeight = isMobile ? 240 : 360;
+
     if (widget.sliderNewsList.isEmpty) {
       return Container(
-        height: 360,
+        height: sliderHeight,
         color: Colors.black,
         child: const Center(child: Text('لا توجد أخبار', style: TextStyle(color: Colors.white))),
       );
     }
 
     return SizedBox(
-      height: 360,
+      height: sliderHeight,
       child: Stack(
         children: [
           NotificationListener<ScrollNotification>(
@@ -116,14 +120,14 @@ class _MainNewsSliderState extends State<MainNewsSlider> {
                           ),
                         ),
                         Positioned(
-                          bottom: 35,
+                          bottom: isMobile ? 25 : 35,
                           right: 16,
                           left: 16,
                           child: Text(
                             mainNews['title'] ?? 'بدون عنوان',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
-                              fontSize: 19,
+                              fontSize: isMobile ? 15 : 19,
                               fontWeight: FontWeight.bold,
                               height: 1.3,
                             ),
@@ -140,7 +144,7 @@ class _MainNewsSliderState extends State<MainNewsSlider> {
           ),
           // مؤشرات النقاط التفاعلية المستقلة
           Positioned(
-            bottom: 10,
+            bottom: 8,
             left: 0,
             right: 0,
             child: Row(

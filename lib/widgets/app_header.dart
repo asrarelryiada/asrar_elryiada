@@ -1,41 +1,12 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../category_news_screen.dart';
+import '../category_videos_screen.dart'; // <--- استدعاء صفحة الفيديوهات والصور الجديدة
 import '../about_screen.dart';
 import '../home_screen.dart';
-import '../social_media_screen.dart'; // استيراد صفحة السوشيال ميديا الجديدة
 
-class AppHeader extends StatefulWidget {
+class AppHeader extends StatelessWidget {
   const AppHeader({super.key});
-
-  @override
-  State<AppHeader> createState() => _AppHeaderState();
-}
-
-class _AppHeaderState extends State<AppHeader> {
-  late String _timeString;
-  Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    _timeString = _formatCurrentTime();
-    _timer = Timer.periodic(const Duration(seconds: 1), (Timer t) => _updateTime());
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  void _updateTime() {
-    if (mounted) {
-      setState(() {
-        _timeString = _formatCurrentTime();
-      });
-    }
-  }
 
   String _formatCurrentTime() {
     final now = DateTime.now();
@@ -57,109 +28,120 @@ class _AppHeaderState extends State<AppHeader> {
     if (hour == 0) hour = 12;
 
     String minute = now.minute.toString().padLeft(2, '0');
-    String second = now.second.toString().padLeft(2, '0');
 
-    return '$dayName، ${now.day} $monthName ${now.year} | $hour:$minute:$second $period';
+    return '$dayName، ${now.day} $monthName | $hour:$minute $period';
+  }
+
+  Future<void> _launchURL(String urlString) async {
+    final Uri url = Uri.parse(urlString);
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    bool isMobile = MediaQuery.of(context).size.width < 900;
+
     return Container(
-      height: 85,
-      color: const Color(0xFFB71C1C), // أحمر داكن فخم
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      height: 70,
+      color: const Color(0xFFB71C1C),
+      padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Directionality(
         textDirection: TextDirection.rtl,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // أقصى اليمين: اللوجو والأقسام الاحترافية
-            Row(
-              children: [
-                InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      PageRouteBuilder(
-                        pageBuilder: (context, animation, secondaryAnimation) => const AboutScreen(),
-                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                          return child;
-                        },
-                        transitionDuration: Duration.zero,
-                      ),
-                    );
-                  },
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
-                    ),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          height: 65,
-                          child: Image.asset(
-                            'assets/images/logo/ASRARELRYIDA LOGO.png',
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'أسرار الرياضة',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ],
+            // 1. أقصى اليمين: شعار الموقع واسمه
+            InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) => const AboutScreen(),
+                    transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
+                    transitionDuration: Duration.zero,
+                  ),
+                );
+              },
+              borderRadius: BorderRadius.circular(6),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    height: 58,
+                    child: Image.asset(
+                      'assets/images/logo/ASRARELRYIDA LOGO.png',
+                      fit: BoxFit.contain,
                     ),
                   ),
+                  if (!isMobile) ...[
+                    const SizedBox(width: 8),
+                    const Text(
+                      'أسرار الرياضة',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 17,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            
+            // 2. المنتصف: القائمة والأقسام
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildHomeItem(context, 'الرئيسية'),
+                      _buildNavItem(context, 'مصر'),
+                      _buildNavItem(context, 'عالمي'),
+                      _buildNavItem(context, 'المحترفون', isHighlight: true),
+                      _buildNavItem(context, 'الدوري المصري'),
+                      _buildNavItem(context, 'مقالات'),
+                      _buildNavItem(context, 'مباريات'),
+                      _buildNavItem(context, 'ألعاب أخرى'),
+                      // رابط خاص بقسم الفيديوهات والصور
+                      _buildVideoNavItem(context, 'فيديوهات وصور'),
+                    ],
+                  ),
                 ),
-                const SizedBox(width: 20),
-                
-                // الأقسام الأساسية
-                _buildHomeItem(context, 'الرئيسية'),
-                _buildNavItem(context, 'مصر'),
-                _buildNavItem(context, 'عالمي'),
-                _buildNavItem(context, 'المحترفون', isHighlight: true),
-                _buildNavItem(context, 'الدوري المصري'),
-                _buildNavItem(context, 'مقالات'),
-                _buildNavItem(context, 'مباريات'),
-                _buildNavItem(context, 'ألعاب أخرى'),
-                _buildNavItem(context, 'فيديوهات وصور'),
-                // زر قسم السوشيال ميديا الجديد
-                _buildSocialMediaTab(context),
-              ],
+              ),
             ),
 
-            // أقصى اليسار: الوقت وأيقونات السوشيال
-            Row(
-              children: [
-                Text(
-                  _timeString,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+            // 3. أقصى اليسار: التاريخ والوقت ثم أزرار السوشيال ميديا
+            if (!isMobile)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _formatCurrentTime(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 15),
-                IconButton(
-                  icon: const Icon(Icons.search, color: Colors.white, size: 20),
-                  onPressed: () {},
-                ),
-                const SizedBox(width: 6),
-                _buildSocialIcon('يوتيوب', Icons.video_library),
-                _buildSocialIcon('انستجرام', Icons.camera_alt),
-                _buildSocialIcon('X', Icons.close),
-                _buildSocialIcon('تيك توك', Icons.music_note),
-                _buildSocialIcon('واتساب', Icons.chat),
-              ],
-            ),
+                  const SizedBox(width: 10),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildSocialBox('فيسبوك', 'https://www.facebook.com/asrarelryidaa'),
+                      _buildSocialBox('يوتيوب', 'https://www.youtube.com/@AsrarElryida'),
+                      _buildSocialBox('انستجرام', 'https://www.instagram.com/asrarelryida2026/'),
+                      _buildSocialBox('تويتر', 'https://x.com/ASRARELRAYIDA'),
+                      _buildSocialBox('تيك توك', 'https://www.tiktok.com/@asrarelryida'),
+                      _buildSocialBox('واتساب', 'https://whatsapp.com'),
+                      _buildSocialBox('تليجرام', 'https://telegram.org'),
+                    ],
+                  ),
+                ],
+              ),
           ],
         ),
       ),
@@ -176,7 +158,7 @@ class _AppHeaderState extends State<AppHeader> {
       },
       borderRadius: BorderRadius.circular(4),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         child: Text(
           title,
           style: const TextStyle(
@@ -196,68 +178,79 @@ class _AppHeaderState extends State<AppHeader> {
           context,
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) => CategoryNewsScreen(categoryName: title),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              return child;
-            },
+            transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
             transitionDuration: Duration.zero,
           ),
         );
       },
       borderRadius: BorderRadius.circular(4),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         child: Text(
           title,
           style: TextStyle(
             color: isHighlight ? Colors.amberAccent : Colors.white,
             fontSize: 13,
-            fontWeight: isHighlight ? FontWeight.bold : FontWeight.w500,
+            fontWeight: isHighlight ? FontWeight.bold : FontWeight.w600,
           ),
         ),
       ),
     );
   }
 
-  // دالة زر السوشيال ميديا في الهيدر
-  Widget _buildSocialMediaTab(BuildContext context) {
+  // رابط مخصص لقسم الفيديوهات والصور يفتح صفحته الخاصة
+  Widget _buildVideoNavItem(BuildContext context, String title) {
     return InkWell(
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const SocialMediaScreen()),
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => const CategoryVideosScreen(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
+            transitionDuration: Duration.zero,
+          ),
         );
       },
       borderRadius: BorderRadius.circular(4),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        child: Row(
-          children: const [
-            Icon(Icons.forum, color: Colors.amberAccent, size: 16),
-            SizedBox(width: 4),
-            Text(
-              'سوشيال ميديا',
-              style: TextStyle(
-                color: Colors.amberAccent,
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        child: Text(
+          title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildSocialIcon(String tooltip, IconData icon) {
-    return Tooltip(
-      message: tooltip,
-      child: Container(
-        padding: const EdgeInsets.all(5),
-        decoration: BoxDecoration(
-          color: Colors.white24,
-          borderRadius: BorderRadius.circular(50),
+  Widget _buildSocialBox(String label, String url) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2.5),
+      child: InkWell(
+        onTap: () => _launchURL(url),
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.3),
+              width: 0.8,
+            ),
+          ),
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
-        child: Icon(icon, color: Colors.white, size: 14),
       ),
     );
   }

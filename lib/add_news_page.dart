@@ -2,7 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
-import 'widgets/news_editor_toolbar.dart'; // استدعاء شريط الأدوات المستقل
+import 'widgets/news_editor_toolbar.dart';
+import 'widgets/social_share_buttons.dart';
 
 class AddNewsPage extends StatefulWidget {
   final String authorName;
@@ -17,16 +18,26 @@ class AddNewsPage extends StatefulWidget {
 class _AddNewsPageState extends State<AddNewsPage> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
+  
+  // حقول الباك لينك كعنوان خبر سابق ورابطه
   final TextEditingController _feedbackLinkController = TextEditingController();
-  final TextEditingController _feedbackTitleController = TextEditingController(); // حقل جديد لعنوان الرابط الداخلي
+  final TextEditingController _feedbackTitleController = TextEditingController(); 
+  
+  // حقل رابط الفيديو بين السطور (بزر تشغيل)
   final TextEditingController _videoLinkController = TextEditingController();
+  
+  // حقل لإضافة صورة ثانية بين السطور
+  final TextEditingController _inlineImageCaptionController = TextEditingController();
+
   late TextEditingController _authorNameController;
 
-  String _selectedCategory = 'مقالات';
+  String _selectedCategory = 'الرئيسية';
   
   final List<String> _categories = [
+    'الرئيسية',
     'مصر',
     'عالمي',
+    'المحترفون',
     'الدوري المصري',
     'مقالات',
     'مباريات',
@@ -43,6 +54,10 @@ class _AddNewsPageState extends State<AddNewsPage> {
   Uint8List? _webImageBytes;
   String _imagePath = '';
   
+  // صورة بين السطور
+  Uint8List? _inlineImageBytes;
+  String _inlineImagePath = '';
+
   Uint8List? _authorImageBytes;
   String _authorImagePath = '';
 
@@ -61,6 +76,7 @@ class _AddNewsPageState extends State<AddNewsPage> {
       _feedbackLinkController.text = widget.existingNews!['feedbackLink'] ?? '';
       _feedbackTitleController.text = widget.existingNews!['feedbackTitle'] ?? '';
       _videoLinkController.text = widget.existingNews!['videoUrl'] ?? widget.existingNews!['videoLink'] ?? '';
+      _inlineImagePath = widget.existingNews!['inlineImageUrl'] ?? '';
       
       String cat = widget.existingNews!['category'] ?? 'مقالات';
       if (_categories.contains(cat)) {
@@ -120,6 +136,23 @@ class _AddNewsPageState extends State<AddNewsPage> {
     }
   }
 
+  Future<void> _pickInlineImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        var bytes = await image.readAsBytes();
+        String base64Image = 'data:image/png;base64,${base64Encode(bytes)}';
+        
+        setState(() {
+          _inlineImageBytes = bytes;
+          _inlineImagePath = base64Image;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error picking inline image: $e');
+    }
+  }
+
   Future<void> _pickAuthorImage() async {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
@@ -154,11 +187,12 @@ class _AddNewsPageState extends State<AddNewsPage> {
       'category': _selectedCategory,
       'imageUrl': _imagePath,
       'image': _imagePath,
+      'inlineImageUrl': _inlineImagePath, // حفظ صورة بين السطور
       'authorImage': _authorImagePath,
       'videoUrl': _videoLinkController.text.trim(),
       'videoLink': _videoLinkController.text.trim(),
       'feedbackLink': _feedbackLinkController.text.trim(),
-      'feedbackTitle': _feedbackTitleController.text.trim(), // حفظ عنوان الرابط الداخلي
+      'feedbackTitle': _feedbackTitleController.text.trim(), // عنوان الخبر السابق (باك لينك نصي)
       'dateTime': formattedDateTime,
       'author': _authorNameController.text.trim(),
       'fontFamily': _selectedFontFamily,
@@ -253,7 +287,7 @@ class _AddNewsPageState extends State<AddNewsPage> {
                   decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade400), borderRadius: BorderRadius.circular(8)),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
-                      value: _selectedCategory,
+                      value: _categories.contains(_selectedCategory) ? _selectedCategory : _categories.first,
                       isExpanded: true,
                       items: _categories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
                       onChanged: (val) => setState(() => _selectedCategory = val!),
@@ -306,7 +340,7 @@ class _AddNewsPageState extends State<AddNewsPage> {
                 ),
                 const SizedBox(height: 16),
 
-                // قسم إدخال رابط داخلي (Backlink) احترافي
+                // 1. قسم إضافة صورة بين السطور
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -317,12 +351,79 @@ class _AddNewsPageState extends State<AddNewsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('إضافة رابط داخلي (Backlink) لخبر سابق', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFB71C1C))),
+                      const Text('إضافة صورة بين السطور داخل المقال', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFB71C1C))),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade200, foregroundColor: Colors.black87),
+                            onPressed: _pickInlineImage,
+                            icon: const Icon(Icons.image, color: Color(0xFFB71C1C)),
+                            label: const Text('اختيار صورة بين السطور'),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Text(
+                              _inlineImagePath.isNotEmpty ? 'تم اختيار صورة بين السطور' : 'اختياري: لتظهر في منتصف المقال',
+                              style: const TextStyle(color: Colors.grey, fontSize: 13),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_inlineImageBytes != null) ...[
+                        const SizedBox(height: 10),
+                        Image.memory(_inlineImageBytes!, height: 100, width: double.infinity, fit: BoxFit.cover),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // 2. قسم إضافة فيديو بين السطور (بزر تشغيل)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('إضافة فيديو بين السطور (مشغل تفاعلي بزر تشغيل)', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFB71C1C))),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _videoLinkController,
+                        decoration: InputDecoration(
+                          hintText: 'ضع رابط الفيديو هنا (مثال يوتيوب أو فيديو مباشر)...',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                          filled: true,
+                          fillColor: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // 3. قسم البك لينك (عنوان خبر سابق نصي وجذاب)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('إضافة باك لينك (عنوان خبر سابق نصي وجذاب)', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFB71C1C))),
                       const SizedBox(height: 8),
                       TextField(
                         controller: _feedbackTitleController,
                         decoration: InputDecoration(
-                          hintText: 'نص الرابط (مثال: اقرأ أيضاً: سقوط الأهلي أمام فيزبريم)',
+                          hintText: 'عنوان الخبر السابق (مثال: اقرأ أيضاً: لامي يامาล يتغنى بـ... في الكرة الذهبية)',
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                           filled: true,
                           fillColor: Colors.white,
@@ -393,6 +494,12 @@ class _AddNewsPageState extends State<AddNewsPage> {
                     onPressed: _saveNews,
                     child: Text(isEditing ? 'حفظ التعديلات' : 'نشر وحفظ المقال', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
+                ),
+                
+                const SizedBox(height: 20),
+                SocialShareButtons(
+                  newsTitle: _titleController.text.isEmpty ? 'أسرار الرياضة' : _titleController.text,
+                  newsUrl: 'https://asrarelriyada.github.io/asrar_elryiada/',
                 ),
               ],
             ),
