@@ -45,6 +45,63 @@ class _MatchesTickerWidgetState extends State<MatchesTickerWidget> {
     }
   }
 
+  // دالة لتنسيق وقت البدء (startTime) من الـ Timestamp
+  String _formatStartTime(dynamic startTimeField) {
+    if (startTimeField == null) return '';
+    try {
+      if (startTimeField is Timestamp) {
+        DateTime dt = startTimeField.toDate();
+        int hour = dt.hour;
+        String period = 'ص';
+        if (hour >= 12) {
+          period = 'م';
+          if (hour > 12) hour -= 12;
+        }
+        if (hour == 0) hour = 12;
+        String minute = dt.minute.toString().padLeft(2, '0');
+        return '$hour:$minute $period';
+      }
+      return startTimeField.toString();
+    } catch (e) {
+      return '';
+    }
+  }
+
+  // دالة ذكية لتحويل الحالة أو عرض الوقت المناسب بالعربي
+  String _getArabicStatus(Map<String, dynamic> matchData) {
+    final rawStatus = matchData['status'];
+    final startTimeField = matchData['startTime'];
+    String timeFormatted = _formatStartTime(startTimeField);
+
+    if (rawStatus == null) {
+      return timeFormatted.isNotEmpty ? timeFormatted : 'قريباً';
+    }
+
+    String status = rawStatus.toString().toLowerCase();
+
+    // لو الحالة لسه لم تبدأ أو قادمة، اعرض التوقيت المظبوط
+    if (status.contains('قادم') || status == 'ns' || status == 'tbd' || status.isEmpty) {
+      return timeFormatted.isNotEmpty ? timeFormatted : rawStatus.toString();
+    }
+    
+    // حالات المباراة الحية
+    if (status.contains('جارية') || status == '1h' || status == '2h' || status == 'et' || status == 'p' || status == 'live') {
+      return 'جارية الان';
+    }
+    
+    // فترة الاستراحة
+    if (status.contains('استراحة') || status == 'ht') {
+      return 'استراحة';
+    }
+    
+    // انتهاء المباراة
+    if (status.contains('انتهت') || status == 'ft' || status == 'aet' || status == 'pen') {
+      return 'انتهت';
+    }
+
+    return timeFormatted.isNotEmpty ? timeFormatted : rawStatus.toString();
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -99,7 +156,21 @@ class _MatchesTickerWidgetState extends State<MatchesTickerWidget> {
                       );
                     }
 
-                    final docs = snapshot.data!.docs;
+                    // ترتيب المباريات تصاعدياً حسب وقت البدء (startTime)
+                    final docs = List.from(snapshot.data!.docs);
+                    docs.sort((a, b) {
+                      final timeA = (a.data() as Map<String, dynamic>)['startTime'];
+                      final timeB = (b.data() as Map<String, dynamic>)['startTime'];
+                      
+                      if (timeA == null && timeB == null) return 0;
+                      if (timeA == null) return 1;
+                      if (timeB == null) return -1;
+
+                      if (timeA is Timestamp && timeB is Timestamp) {
+                        return timeA.compareTo(timeB);
+                      }
+                      return 0;
+                    });
 
                     return ListView.builder(
                       controller: _scrollController,
@@ -145,7 +216,9 @@ class _MatchesTickerWidgetState extends State<MatchesTickerWidget> {
     final team2 = matchData['teamB'] ?? 'الفريق الثاني';
     final score1 = matchData['scoreA'] ?? '0';
     final score2 = matchData['scoreB'] ?? '0';
-    final status = matchData['status'] ?? 'قريباً';
+
+    String displayStatus = _getArabicStatus(matchData);
+    bool isLive = displayStatus == 'جارية الان';
 
     return InkWell(
       onTap: () {
@@ -212,8 +285,12 @@ class _MatchesTickerWidgetState extends State<MatchesTickerWidget> {
             ),
             const SizedBox(height: 2),
             Text(
-              status,
-              style: TextStyle(color: Colors.grey, fontSize: isMobile ? 9 : 10),
+              displayStatus,
+              style: TextStyle(
+                color: isLive ? Colors.greenAccent : Colors.grey,
+                fontSize: isMobile ? 9 : 10,
+                fontWeight: isLive ? FontWeight.bold : FontWeight.normal,
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),

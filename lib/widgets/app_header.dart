@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../category_news_screen.dart';
-import '../category_videos_screen.dart'; // <--- استدعاء صفحة الفيديوهات والصور الجديدة
+import '../category_videos_screen.dart';
 import '../about_screen.dart';
 import '../home_screen.dart';
 
@@ -44,7 +44,7 @@ class AppHeader extends StatelessWidget {
     bool isMobile = MediaQuery.of(context).size.width < 900;
 
     return Container(
-      height: 70,
+      height: 52, // تقليل الارتفاع ليصبح رفيعاً وأنيقاً
       color: const Color(0xFFB71C1C),
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Directionality(
@@ -52,7 +52,7 @@ class AppHeader extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // 1. أقصى اليمين: شعار الموقع واسمه
+            // 1. أقصى اليمين: شعار الموقع واسمه بحجم متناسق
             InkWell(
               onTap: () {
                 Navigator.push(
@@ -64,25 +64,25 @@ class AppHeader extends StatelessWidget {
                   ),
                 );
               },
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(4),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   SizedBox(
-                    height: 58,
+                    height: 38,
                     child: Image.asset(
-                      'assets/images/logo/ASRARELRYIDA LOGO.png',
+                      'assets/images/logo/logo.png',
                       fit: BoxFit.contain,
                     ),
                   ),
                   if (!isMobile) ...[
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     const Text(
                       'أسرار الرياضة',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
-                        fontSize: 17,
+                        fontSize: 14,
                       ),
                     ),
                   ],
@@ -90,7 +90,7 @@ class AppHeader extends StatelessWidget {
               ),
             ),
             
-            // 2. المنتصف: القائمة والأقسام
+            // 2. المنتصف: أزرار الأقسام بشكل منسق وشيك
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -106,7 +106,6 @@ class AppHeader extends StatelessWidget {
                       _buildNavItem(context, 'مقالات'),
                       _buildNavItem(context, 'مباريات'),
                       _buildNavItem(context, 'ألعاب أخرى'),
-                      // رابط خاص بقسم الفيديوهات والصور
                       _buildVideoNavItem(context, 'فيديوهات وصور'),
                     ],
                   ),
@@ -114,7 +113,7 @@ class AppHeader extends StatelessWidget {
               ),
             ),
 
-            // 3. أقصى اليسار: التاريخ والوقت ثم أزرار السوشيال ميديا
+            // 3. أقصى اليسار: التاريخ وأزرار السوشيال الميديا المدمجة
             if (!isMobile)
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -122,12 +121,12 @@ class AppHeader extends StatelessWidget {
                   Text(
                     _formatCurrentTime(),
                     style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                      color: Colors.white70,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 8),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -156,14 +155,14 @@ class AppHeader extends StatelessWidget {
           MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
       },
-      borderRadius: BorderRadius.circular(4),
+      borderRadius: BorderRadius.circular(3),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         child: Text(
           title,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -183,14 +182,14 @@ class AppHeader extends StatelessWidget {
           ),
         );
       },
-      borderRadius: BorderRadius.circular(4),
+      borderRadius: BorderRadius.circular(3),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         child: Text(
           title,
           style: TextStyle(
             color: isHighlight ? Colors.amberAccent : Colors.white,
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: isHighlight ? FontWeight.bold : FontWeight.w600,
           ),
         ),
@@ -198,7 +197,6 @@ class AppHeader extends StatelessWidget {
     );
   }
 
-  // رابط مخصص لقسم الفيديوهات والصور يفتح صفحته الخاصة
   Widget _buildVideoNavItem(BuildContext context, String title) {
     return InkWell(
       onTap: () {
@@ -211,14 +209,14 @@ class AppHeader extends StatelessWidget {
           ),
         );
       },
-      borderRadius: BorderRadius.circular(4),
+      borderRadius: BorderRadius.circular(3),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         child: Text(
           title,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -228,25 +226,25 @@ class AppHeader extends StatelessWidget {
 
   Widget _buildSocialBox(String label, String url) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2.5),
+      padding: const EdgeInsets.symmetric(horizontal: 1),
       child: InkWell(
         onTap: () => _launchURL(url),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(3),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(6),
+            color: Colors.black.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(3),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
-              width: 0.8,
+              color: Colors.white.withOpacity(0.25),
+              width: 0.6,
             ),
           ),
           child: Text(
             label,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: FontWeight.bold,
             ),
           ),
